@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #4F46E5;
+  /* Indigo 600 */
+  --color-primary-dark: #4338ca;
+  /* Indigo 700 */
+  --color-secondary: #0EA5E9;
+  /* Sky 500 */
+  --color-accent: #F43F5E;
+  /* Rose 500 */
+  --color-background: #F8FAFC;
+  /* Slate 50 */
+  --color-surface: #FFFFFF;
+}
+
 body {
-  @apply bg-gray-50 text-gray-900 font-sans;
+  @apply bg-background text-slate-900 font-sans antialiased;
+}
+
+/* Glassmorphism utility */
+.glass {
+  @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
 }

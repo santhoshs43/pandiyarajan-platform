@@ -1,8 +1,12 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
     console.log('Seeding database...');
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('password123', salt);
 
     // 1. Create a demo Instructor
     const instructorConfig = {
@@ -11,12 +15,12 @@ async function main() {
         role: 'INSTRUCTOR',
         // In a real app, hash this password! 
         // This is just for seeding demonstration purposes.
-        password: 'password123'
+        password: hashedPassword
     };
 
     const instructor = await prisma.user.upsert({
         where: { email: instructorConfig.email },
-        update: {},
+        update: { password: hashedPassword },
         create: instructorConfig,
     });
 
@@ -32,9 +36,9 @@ async function main() {
             instructorId: instructor.id,
             lessons: {
                 create: [
-                    { title: 'Introduction to Java', content: 'History and Setup' },
-                    { title: 'Variables and Data Types', content: 'Understanding primitives and objects' },
-                    { title: 'OOP Concepts', content: 'Classes, Objects, Inheritance' },
+                    { title: 'Introduction to Java', content: 'History and Setup', videoUrl: 'https://www.youtube.com/watch?v=grEKMHGYyns' },
+                    { title: 'Variables and Data Types', content: 'Understanding primitives and objects', videoUrl: 'https://www.youtube.com/watch?v=gtQJNm3_p-A' },
+                    { title: 'OOP Concepts', content: 'Classes, Objects, Inheritance', videoUrl: 'https://www.youtube.com/watch?v=U8wrZ92nAL8' },
                 ],
             },
         },
@@ -51,9 +55,9 @@ async function main() {
             instructorId: instructor.id,
             lessons: {
                 create: [
-                    { title: 'Python Setup', content: 'Installing Python and VS Code' },
-                    { title: 'Control Flow', content: 'If statements and Loops' },
-                    { title: 'Functions and Modules', content: 'Reusing code effectively' },
+                    { title: 'Python Setup', content: 'Installing Python and VS Code', videoUrl: 'https://www.youtube.com/watch?v=_uQrJ0TkZlc' },
+                    { title: 'Control Flow', content: 'If statements and Loops', videoUrl: 'https://www.youtube.com/watch?v=6iF8Xb7Z3wQ' },
+                    { title: 'Functions and Modules', content: 'Reusing code effectively', videoUrl: 'https://www.youtube.com/watch?v=NSbOtYzIQI0' },
                 ],
             },
         },

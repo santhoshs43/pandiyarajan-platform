@@ -6,27 +6,23 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
-enum Role {
-  STUDENT
-  INSTRUCTOR
-  ADMIN
-}
 
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   name      String
-  role      Role     @default(STUDENT)
+  role      String   @default("STUDENT")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   courses     Course[]     @relation("InstructorCourses")
   enrollments Enrollment[]
+  certificates Certificate[]
 }
 
 model Course {
@@ -42,6 +38,20 @@ model Course {
 
   enrollments Enrollment[]
   lessons     Lesson[]
+  certificates Certificate[]
+}
+
+model Enrollment {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  courseId    Int
+  course      Course   @relation(fields: [courseId], references: [id])
+  status      String   @default("PENDING") // PENDING, ACTIVE (Paid), COMPLETED
+  enrolledAt  DateTime @default(now())
+  progress    LessonProgress[]
+
+  @@unique([userId, courseId])
 }
 
 model Lesson {
@@ -49,18 +59,34 @@ model Lesson {
   title     String
   content   String?
   videoUrl  String?
+  sequence  Int      @default(0) // Order of the lesson
   courseId  Int
   course    Course   @relation(fields: [courseId], references: [id])
   createdAt DateTime @default(now())
+  
+  userProgress LessonProgress[]
 }
 
-model Enrollment {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  courseId  Int
-  course    Course   @relation(fields: [courseId], references: [id])
-  enrolledAt DateTime @default(now())
+model LessonProgress {
+  id           Int        @id @default(autoincrement())
+  enrollmentId Int
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  lessonId     Int
+  lesson       Lesson     @relation(fields: [lessonId], references: [id])
+  completed    Boolean    @default(false)
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([enrollmentId, lessonId])
+}
+
+model Certificate {
+  id            String   @id @default(uuid())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  courseId      Int
+  course        Course   @relation(fields: [courseId], references: [id])
+  issuedAt      DateTime @default(now())
+  certificateUrl String? // Could be a generated URL or static path
 
   @@unique([userId, courseId])
 }

@@ -67,8 +67,119 @@ const createCourse = async (req, res) => {
     }
 };
 
+// @desc    Enroll in a course
+// @route   POST /api/courses/:id/enroll
+// @access  Private
+const enrollInCourse = async (req, res) => {
+    const courseId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    try {
+        // Check if already enrolled
+        const existingEnrollment = await prisma.enrollment.findUnique({
+            where: {
+                userId_courseId: {
+                    userId,
+                    courseId,
+                },
+            },
+        });
+
+        if (existingEnrollment) {
+            return res.status(400).json({ message: 'Already enrolled' });
+        }
+
+        // Simulating Payment (In real app, verify payment here)
+        // For now, auto-approve enrollment as ACTIVE
+        const enrollment = await prisma.enrollment.create({
+            data: {
+                userId,
+                courseId,
+                status: 'ACTIVE', // Simulating successful payment
+            },
+        });
+
+        res.status(201).json({ message: 'Enrolled successfully', enrollment });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Generate Certificate
+// @route   POST /api/courses/:id/certificate
+// @access  Private
+const generateCertificate = async (req, res) => {
+    const courseId = parseInt(req.params.id);
+    const userId = req.user.id;
+
+    try {
+        // 1. Check if enrolled
+        const enrollment = await prisma.enrollment.findUnique({
+            where: {
+                userId_courseId: {
+                    userId,
+                    courseId,
+                },
+            },
+            include: {
+                progress: true,
+            },
+        });
+
+        if (!enrollment) {
+            return res.status(404).json({ message: 'Not enrolled in this course' });
+        }
+
+        // 2. Check if all lessons are completed
+        const course = await prisma.course.findUnique({
+            where: { id: courseId },
+            include: { lessons: true },
+        });
+
+        const completedLessonIds = enrollment.progress
+            .filter(p => p.completed)
+            .map(p => p.lessonId);
+
+        const allCompleted = course.lessons.every(lesson => completedLessonIds.includes(lesson.id));
+
+        if (!allCompleted) {
+            return res.status(400).json({ message: 'Course not yet completed' });
+        }
+
+        // 3. Create or Get Certificate
+        const existingCertificate = await prisma.certificate.findUnique({
+            where: {
+                userId_courseId: {
+                    userId,
+                    courseId,
+                },
+            },
+        });
+
+        if (existingCertificate) {
+            return res.json(existingCertificate);
+        }
+
+        const certificate = await prisma.certificate.create({
+            data: {
+                userId,
+                courseId,
+                certificateUrl: `https://example.com/certificates/${userId}/${courseId}`, // Mock URL
+            },
+        });
+
+        res.status(201).json(certificate);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
     getCourses,
     getCourse,
     createCourse,
+    enrollInCourse,
+    generateCertificate,
 };

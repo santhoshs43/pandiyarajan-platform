@@ -1,14 +1,22 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import authService from '../services/authService';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: Implement login logic
-        console.log('Login:', { email, password });
+        setError('');
+        try {
+            await authService.login({ email, password });
+            navigate('/');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to login');
+        }
     };
 
     return (
@@ -26,6 +34,7 @@ const Login = () => {
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    {error && <div className="text-red-500 text-sm text-center">{error}</div>}
                     <input type="hidden" name="remember" value="true" />
                     <div className="rounded-md shadow-sm -space-y-px">
                         <div>
